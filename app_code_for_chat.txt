@@ -1,0 +1,1173 @@
+import streamlit as st
+
+from agents.admission_agent import admission_agent
+from agents.academic_agent import academic_agent
+from agents.notice_agent import notice_agent
+from agents.student_services_agent import student_services_agent
+from agents.supervisor_agent import supervisor_agent
+
+
+st.set_page_config(
+    page_title="IPU AI",
+    page_icon="ðŸŽ“",
+    layout="wide",
+    initial_sidebar_state="collapsed"
+)
+
+
+# =========================
+# SESSION
+# =========================
+
+if "page" not in st.session_state:
+    st.session_state.page = "Home"
+
+
+def go_to(page):
+    st.session_state.page = page
+
+
+# =========================
+# CSS
+# =========================
+
+st.markdown("""
+<style>
+
+#MainMenu, footer, header {
+    visibility: hidden;
+}
+
+.stApp {
+    background: #f5f7fb;
+}
+
+.block-container {
+    max-width: 1200px;
+    padding-top: 1.2rem;
+    padding-bottom: 3rem;
+}
+
+
+/* NAVBAR */
+
+.navbar {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    padding: 18px 24px;
+    margin-bottom: 24px;
+    box-shadow: 0 5px 18px rgba(15,23,42,0.04);
+}
+
+.brand {
+    font-size: 26px;
+    font-weight: 800;
+    color: #172033;
+}
+
+.brand-blue {
+    color: #2563eb;
+}
+
+.nav-info {
+    color: #64748b;
+    font-size: 13px;
+}
+
+
+/* NAV BUTTONS */
+
+.stButton > button {
+    border-radius: 10px;
+    border: 1px solid #dbe3f0;
+    background: white;
+    color: #172033;
+    font-weight: 650;
+    min-height: 42px;
+}
+
+.stButton > button:hover {
+    border-color: #2563eb;
+    color: #2563eb;
+}
+
+
+/* HERO */
+
+.hero {
+    background: linear-gradient(
+        135deg,
+        #172554 0%,
+        #1e40af 55%,
+        #2563eb 100%
+    );
+    border-radius: 26px;
+    padding: 55px;
+    margin-bottom: 32px;
+    box-shadow: 0 18px 45px rgba(30,64,175,0.16);
+}
+
+.hero-small {
+    color: #bfdbfe;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    margin-bottom: 14px;
+}
+
+.hero-title {
+    color: white;
+    font-size: 46px;
+    font-weight: 800;
+    line-height: 1.1;
+    margin-bottom: 16px;
+}
+
+.hero-description {
+    color: #dbeafe;
+    font-size: 16px;
+    line-height: 1.7;
+    max-width: 720px;
+}
+
+
+/* SECTION */
+
+.section-title {
+    font-size: 25px;
+    font-weight: 800;
+    color: #172033;
+    margin-top: 25px;
+}
+
+.section-subtitle {
+    color: #64748b;
+    font-size: 14px;
+    margin-bottom: 20px;
+}
+
+
+/* CARDS */
+
+.card {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 18px;
+    padding: 24px;
+    min-height: 180px;
+    box-shadow: 0 8px 25px rgba(15,23,42,0.04);
+}
+
+.card-icon {
+    font-size: 30px;
+    margin-bottom: 10px;
+}
+
+.card-title {
+    color: #172033;
+    font-size: 18px;
+    font-weight: 800;
+    margin-bottom: 8px;
+}
+
+.card-text {
+    color: #64748b;
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+
+/* AI */
+
+.ai-box {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 20px;
+    padding: 30px;
+    margin-top: 36px;
+    box-shadow: 0 8px 25px rgba(15,23,42,0.04);
+}
+
+.ai-title {
+    color: #172033;
+    font-size: 24px;
+    font-weight: 800;
+}
+
+.ai-text {
+    color: #64748b;
+    font-size: 14px;
+    line-height: 1.6;
+    margin-top: 7px;
+}
+
+
+/* INNER PAGE */
+
+.page-banner {
+    background: linear-gradient(
+        135deg,
+        #172554,
+        #2563eb
+    );
+    border-radius: 22px;
+    padding: 38px 42px;
+    margin-bottom: 28px;
+}
+
+.page-small {
+    color: #bfdbfe;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 2px;
+}
+
+.page-title {
+    color: white;
+    font-size: 34px;
+    font-weight: 800;
+    margin-top: 8px;
+}
+
+.page-text {
+    color: #dbeafe;
+    font-size: 15px;
+    margin-top: 8px;
+}
+
+
+/* FEATURES */
+
+.feature {
+    text-align: center;
+    padding: 20px;
+}
+
+.feature-icon {
+    font-size: 30px;
+}
+
+.feature-title {
+    color: #172033;
+    font-weight: 800;
+    margin-top: 8px;
+}
+
+.feature-text {
+    color: #64748b;
+    font-size: 13px;
+    margin-top: 5px;
+}
+
+
+/* FOOTER */
+
+.footer {
+    text-align: center;
+    color: #64748b;
+    font-size: 12px;
+    padding: 45px 0 15px;
+}
+
+
+/* Admission page text visibility fix */
+.stTextInput label {
+    color: #334155 !important;
+    font-weight: 600 !important;
+}
+
+.ai-box + div,
+.ai-box + div p {
+    color: #334155 !important;
+}
+
+.stMarkdown p {
+    color: #475569 !important;
+}
+
+/* Admission answer readability */
+.stMarkdown li {
+    color: #334155 !important;
+}
+
+.stMarkdown li p {
+    color: #334155 !important;
+}
+
+.stMarkdown ol,
+.stMarkdown ul {
+    color: #334155 !important;
+}
+
+/* Admission answer readability */
+.stMarkdown li {
+    color: #334155 !important;
+}
+
+.stMarkdown li p {
+    color: #334155 !important;
+}
+
+.stMarkdown ol,
+.stMarkdown ul {
+    color: #334155 !important;
+}
+</style>
+""", unsafe_allow_html=True)
+
+
+# =========================
+# NAVBAR
+# =========================
+
+left, right = st.columns([2, 4])
+
+with left:
+    st.markdown(
+        '<div class="navbar"><div class="brand">'
+        '<span class="brand-blue">IPU</span> AI'
+        '</div></div>',
+        unsafe_allow_html=True
+    )
+
+with right:
+    st.markdown(
+        '<div class="navbar"><div class="nav-info">'
+        'Intelligent University Information System'
+        '</div></div>',
+        unsafe_allow_html=True
+    )
+
+
+# =========================
+# NAVIGATION
+# =========================
+
+n1, n2, n3, n4, n5, n6 = st.columns(6)
+
+with n1:
+    if st.button("Home", use_container_width=True):
+        go_to("Home")
+
+with n2:
+    if st.button("Admissions", use_container_width=True):
+        go_to("Admissions")
+
+with n3:
+    if st.button("Academics", use_container_width=True):
+        go_to("Academics")
+
+with n4:
+    if st.button("Notices", use_container_width=True):
+        go_to("Notices")
+
+with n5:
+    if st.button("Student Services", use_container_width=True):
+        go_to("Student Services")
+
+with n6:
+    if st.button("ðŸ¤– AI Assistant", use_container_width=True):
+        go_to("AI Assistant")
+
+
+st.write("")
+
+
+# =========================
+# HOME
+# =========================
+
+if st.session_state.page == "Home":
+    st.markdown("""
+<div class="hero">
+<div class="hero-small">
+GURU GOBIND SINGH INDRAPRASTHA UNIVERSITY
+</div>
+<div class="hero-title">
+Your IPU Information Hub
+</div>
+<div class="hero-description">
+Find information about admissions, academic rules,
+programs, university notices and student services
+with the help of an AI-powered information assistant.
+</div>
+</div>
+""", unsafe_allow_html=True)
+
+
+    st.markdown(
+        '<div class="section-title">Explore IPU Information</div>',
+        unsafe_allow_html=True
+    )
+
+    st.markdown(
+        '<div class="section-subtitle">'
+        'Quick access to the information students need most.'
+        '</div>',
+        unsafe_allow_html=True
+    )
+
+    c1, c2, c3, c4 = st.columns(4)
+
+
+    with c1:
+        st.markdown("""
+        <div class="card">
+            <div class="card-icon">ðŸ“</div>
+            <div class="card-title">Admissions</div>
+            <div class="card-text">
+                Eligibility, application process,
+                registration and admission information.
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        if st.button("Explore â†’", key="admission_home",
+                     use_container_width=True):
+            go_to("Admissions")
+
+
+    with c2:
+        st.markdown("""
+        <div class="card">
+            <div class="card-icon">ðŸ“š</div>
+            <div class="card-title">Academics</div>
+            <div class="card-text">
+                Exams, marks, syllabus, academic
+                rules and university regulations.
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        if st.button("Explore â†’", key="academic_home",
+                     use_container_width=True):
+            go_to("Academics")
+
+
+    with c3:
+        st.markdown("""
+        <div class="card">
+            <div class="card-icon">ðŸ“¢</div>
+            <div class="card-title">Notices</div>
+            <div class="card-text">
+                University notifications,
+                circulars and important announcements.
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        if st.button("Explore â†’", key="notice_home",
+                     use_container_width=True):
+            go_to("Notices")
+
+
+    with c4:
+        st.markdown("""
+        <div class="card">
+            <div class="card-icon">ðŸŽ«</div>
+            <div class="card-title">Student Services</div>
+            <div class="card-text">
+                Certificates, documents, fees,
+                scholarships and student facilities.
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        if st.button("Explore â†’", key="services_home",
+                     use_container_width=True):
+            go_to("Student Services")
+
+    st.markdown("""
+<div class="ai-box">
+<div class="ai-title">ðŸ¤– Ask the IPU AI Assistant</div>
+<div class="ai-text">
+Have a question about IPU? Ask the intelligent assistant
+about admissions, academics, notices or student services.
+</div>
+</div>
+""", unsafe_allow_html=True)
+
+    if st.button("Ask the AI Assistant â†’", type="primary"):
+        go_to("AI Assistant")
+
+
+    st.markdown(
+        '<div class="section-title">Why use IPU AI?</div>',
+        unsafe_allow_html=True
+    )
+
+
+    f1, f2, f3, f4 = st.columns(4)
+
+    features = [
+        ("ðŸ¤–", "Multi-Agent AI",
+         "Specialized agents handle different university queries."),
+        ("ðŸ“š", "RAG Powered",
+         "Information is retrieved from university documents."),
+        ("ðŸ”Ž", "Source Based",
+         "Answers can be supported by relevant sources."),
+        ("âš¡", "Quick Answers",
+         "Find useful university information quickly.")
+    ]
+
+    for col, item in zip([f1, f2, f3, f4], features):
+        with col:
+            st.markdown(
+                f"""
+                <div class="feature">
+                    <div class="feature-icon">{item[0]}</div>
+                    <div class="feature-title">{item[1]}</div>
+                    <div class="feature-text">{item[2]}</div>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+
+
+# =========================
+# ADMISSIONS
+# =========================
+
+elif st.session_state.page == "Admissions":
+
+    st.markdown("""
+<div class="page-banner">
+    <div class="page-small">IPU ADMISSIONS</div>
+    <div class="page-title">Admissions Information</div>
+    <div class="page-text">
+        Get reliable information about eligibility, applications,
+        registration and admission procedures.
+    </div>
+</div>
+""", unsafe_allow_html=True)
+
+    st.markdown(
+        '<div class="section-title">Admission Support</div>',
+        unsafe_allow_html=True
+    )
+
+    st.markdown(
+        '<div class="section-subtitle">'
+        'Ask questions related to IPU admission and get information '
+        'from university documents.'
+        '</div>',
+        unsafe_allow_html=True
+    )
+
+    a1, a2, a3 = st.columns(3)
+
+    with a1:
+        st.markdown("""
+<div class="feature">
+    <div class="feature-icon">ðŸŽ“</div>
+    <div class="feature-title">Eligibility</div>
+    <div class="feature-text">
+        Check eligibility requirements for different programs.
+    </div>
+</div>
+""", unsafe_allow_html=True)
+
+    with a2:
+        st.markdown("""
+<div class="feature">
+    <div class="feature-icon">ðŸ“</div>
+    <div class="feature-title">Application</div>
+    <div class="feature-text">
+        Find information about registration and applications.
+    </div>
+</div>
+""", unsafe_allow_html=True)
+
+    with a3:
+        st.markdown("""
+<div class="feature">
+    <div class="feature-icon">ðŸ“‹</div>
+    <div class="feature-title">Admission Process</div>
+    <div class="feature-text">
+        Understand important admission procedures and requirements.
+    </div>
+</div>
+""", unsafe_allow_html=True)
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    st.markdown("""
+<div class="ai-box">
+    <div class="ai-title">ðŸŽ“ Ask about Admissions</div>
+    <div class="ai-text">
+        Ask a question and the Admission Agent will search
+        the available IPU university information.
+    </div>
+</div>
+""", unsafe_allow_html=True)
+
+    query = st.text_input(
+        "Your admission question",
+        placeholder="e.g. What is the eligibility for B.Tech admission?",
+        key="admission_query"
+    )
+
+    st.markdown(
+        '<div class="section-subtitle">Example questions</div>',
+        unsafe_allow_html=True
+    )
+
+    q1, q2, q3 = st.columns(3)
+
+    with q1:
+        if st.button(
+            "B.Tech eligibility",
+            use_container_width=True,
+            key="admission_example_1"
+        ):
+            st.session_state.admission_query = (
+                "What is the eligibility for B.Tech admission?"
+            )
+            st.rerun()
+
+    with q2:
+        if st.button(
+            "Admission process",
+            use_container_width=True,
+            key="admission_example_2"
+        ):
+            st.session_state.admission_query = (
+                "What is the admission process?"
+            )
+            st.rerun()
+
+    with q3:
+        if st.button(
+            "Registration details",
+            use_container_width=True,
+            key="admission_example_3"
+        ):
+            st.session_state.admission_query = (
+                "What are the registration requirements?"
+            )
+            st.rerun()
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    if st.button(
+        "ðŸ”Ž Search Admissions",
+        type="primary",
+        use_container_width=True,
+        key="search_admissions"
+    ):
+        if query.strip():
+
+            with st.spinner("Searching university information..."):
+                result = admission_agent(query)
+
+            st.markdown("""
+<div class="ai-box">
+    <div class="ai-title">ðŸ’¡ Admission Answer</div>
+</div>
+""", unsafe_allow_html=True)
+
+            st.write(result)
+
+        else:
+            st.warning("Please enter an admission question first.")
+
+
+# =========================
+# ACADEMICS
+# =========================
+# =========================
+
+elif st.session_state.page == "Academics":
+
+    st.markdown("""
+<div class="page-banner">
+    <div class="page-small">IPU ACADEMICS</div>
+    <div class="page-title">Academic Information</div>
+    <div class="page-text">
+        Explore syllabus, examinations, marks, academic rules
+        and university regulations.
+    </div>
+</div>
+""", unsafe_allow_html=True)
+
+    st.markdown(
+        '<div class="section-title">Academic Support</div>',
+        unsafe_allow_html=True
+    )
+
+    st.markdown(
+        '<div class="section-subtitle">'
+        'Ask questions about academics and get information '
+        'from available IPU university documents.'
+        '</div>',
+        unsafe_allow_html=True
+    )
+
+    a1, a2, a3 = st.columns(3)
+
+    with a1:
+        st.markdown("""
+<div class="feature">
+    <div class="feature-icon">ðŸ“š</div>
+    <div class="feature-title">Syllabus</div>
+    <div class="feature-text">
+        Find information about courses, subjects and syllabus.
+    </div>
+</div>
+""", unsafe_allow_html=True)
+
+    with a2:
+        st.markdown("""
+<div class="feature">
+    <div class="feature-icon">ðŸ“</div>
+    <div class="feature-title">Examinations</div>
+    <div class="feature-text">
+        Ask about exams, marks, results and academic requirements.
+    </div>
+</div>
+""", unsafe_allow_html=True)
+
+    with a3:
+        st.markdown("""
+<div class="feature">
+    <div class="feature-icon">ðŸ“–</div>
+    <div class="feature-title">Academic Rules</div>
+    <div class="feature-text">
+        Get information about academic regulations and policies.
+    </div>
+</div>
+""", unsafe_allow_html=True)
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    st.markdown("""
+<div class="ai-box">
+    <div class="ai-title">ðŸ“š Ask about Academics</div>
+    <div class="ai-text">
+        Ask an academic question and the Academic Agent will search
+        the available IPU university information.
+    </div>
+</div>
+""", unsafe_allow_html=True)
+
+    query = st.text_input(
+        "Your academic question",
+        placeholder="e.g. What are the passing marks in IPU?",
+        key="academic_query"
+    )
+
+    st.markdown(
+        '<div class="section-subtitle">Example questions</div>',
+        unsafe_allow_html=True
+    )
+
+    q1, q2, q3 = st.columns(3)
+
+    with q1:
+        if st.button(
+            "Passing marks",
+            use_container_width=True,
+            key="academic_example_1"
+        ):
+            st.session_state.academic_query = (
+                "What are the passing marks in IPU?"
+            )
+            st.rerun()
+
+    with q2:
+        if st.button(
+            "Academic rules",
+            use_container_width=True,
+            key="academic_example_2"
+        ):
+            st.session_state.academic_query = (
+                "What are the academic rules in IPU?"
+            )
+            st.rerun()
+
+    with q3:
+        if st.button(
+            "Exam information",
+            use_container_width=True,
+            key="academic_example_3"
+        ):
+            st.session_state.academic_query = (
+                "What are the examination requirements?"
+            )
+            st.rerun()
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    if st.button(
+        "ðŸ”Ž Search Academics",
+        type="primary",
+        use_container_width=True,
+        key="search_academics"
+    ):
+        if query.strip():
+
+            with st.spinner("Searching university information..."):
+                result = academic_agent(query)
+
+            st.markdown("""
+<div class="ai-box">
+    <div class="ai-title">ðŸ’¡ Academic Answer</div>
+</div>
+""", unsafe_allow_html=True)
+
+            st.write(result)
+
+        else:
+            st.warning("Please enter an academic question first.")
+
+# =========================
+# NOTICES
+# =========================
+
+elif st.session_state.page == "Notices":
+
+    st.markdown("""
+<div class="page-banner">
+    <div class="page-small">IPU NOTICES</div>
+    <div class="page-title">University Notices</div>
+    <div class="page-text">
+        Find notifications, circulars, announcements and
+        other important university updates.
+    </div>
+</div>
+""", unsafe_allow_html=True)
+
+    st.markdown(
+        '<div class="section-title">Notice Support</div>',
+        unsafe_allow_html=True
+    )
+
+    st.markdown(
+        '<div class="section-subtitle">'
+        'Ask questions about university notices and get information '
+        'from available IPU documents.'
+        '</div>',
+        unsafe_allow_html=True
+    )
+
+    n1, n2, n3 = st.columns(3)
+
+    with n1:
+        st.markdown("""
+<div class="feature">
+    <div class="feature-icon">ðŸ“¢</div>
+    <div class="feature-title">Announcements</div>
+    <div class="feature-text">
+        Find important university announcements and updates.
+    </div>
+</div>
+""", unsafe_allow_html=True)
+
+    with n2:
+        st.markdown("""
+<div class="feature">
+    <div class="feature-icon">ðŸ“„</div>
+    <div class="feature-title">Circulars</div>
+    <div class="feature-text">
+        Search official circulars and notifications.
+    </div>
+</div>
+""", unsafe_allow_html=True)
+
+    with n3:
+        st.markdown("""
+<div class="feature">
+    <div class="feature-icon">ðŸ””</div>
+    <div class="feature-title">Important Updates</div>
+    <div class="feature-text">
+        Ask about important notices and student-related updates.
+    </div>
+</div>
+""", unsafe_allow_html=True)
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    st.markdown("""
+<div class="ai-box">
+    <div class="ai-title">ðŸ“¢ Ask about Notices</div>
+    <div class="ai-text">
+        Ask a question and the Notice Agent will search
+        the available IPU university notices and documents.
+    </div>
+</div>
+""", unsafe_allow_html=True)
+
+    query = st.text_input(
+        "Your notice question",
+        placeholder="e.g. What is the latest examination notice?",
+        key="notice_query"
+    )
+
+    st.markdown(
+        '<div class="section-subtitle">Example questions</div>',
+        unsafe_allow_html=True
+    )
+
+    q1, q2, q3 = st.columns(3)
+
+    with q1:
+        if st.button(
+            "Latest notice",
+            use_container_width=True,
+            key="notice_example_1"
+        ):
+            st.session_state.notice_query = (
+                "What is the latest university notice?"
+            )
+            st.rerun()
+
+    with q2:
+        if st.button(
+            "Exam notice",
+            use_container_width=True,
+            key="notice_example_2"
+        ):
+            st.session_state.notice_query = (
+                "What are the latest examination notices?"
+            )
+            st.rerun()
+
+    with q3:
+        if st.button(
+            "Important circulars",
+            use_container_width=True,
+            key="notice_example_3"
+        ):
+            st.session_state.notice_query = (
+                "What are the important university circulars?"
+            )
+            st.rerun()
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    if st.button(
+        "ðŸ”Ž Search Notices",
+        type="primary",
+        use_container_width=True,
+        key="search_notices"
+    ):
+        if query.strip():
+
+            with st.spinner("Searching university notices..."):
+                result = notice_agent(query)
+
+            st.markdown("""
+<div class="ai-box">
+    <div class="ai-title">ðŸ’¡ Notice Answer</div>
+</div>
+""", unsafe_allow_html=True)
+
+            st.write(result)
+
+        else:
+            st.warning("Please enter a notice question first.")
+
+# =========================
+# STUDENT SERVICES
+# =========================
+
+elif st.session_state.page == "Student Services":
+
+    st.markdown("""
+<div class="page-banner">
+    <div class="page-small">IPU STUDENT SERVICES</div>
+    <div class="page-title">Student Services</div>
+    <div class="page-text">
+        Get information about certificates, documents, fees,
+        scholarships and other student services.
+    </div>
+</div>
+""", unsafe_allow_html=True)
+
+    st.markdown(
+        '<div class="section-title">Student Support</div>',
+        unsafe_allow_html=True
+    )
+
+    st.markdown(
+        '<div class="section-subtitle">'
+        'Ask questions about student services and get information '
+        'from available IPU university documents.'
+        '</div>',
+        unsafe_allow_html=True
+    )
+
+    s1, s2, s3 = st.columns(3)
+
+    with s1:
+        st.markdown("""
+<div class="feature">
+    <div class="feature-icon">Document</div>
+    <div class="feature-title">Certificates</div>
+    <div class="feature-text">
+        Find information about certificates and required documents.
+    </div>
+</div>
+""", unsafe_allow_html=True)
+
+    with s2:
+        st.markdown("""
+<div class="feature">
+    <div class="feature-icon">💰</div>
+    <div class="feature-title">Fees & Scholarships</div>
+    <div class="feature-text">
+        Ask about fees, scholarships and student financial support.
+    </div>
+</div>
+""", unsafe_allow_html=True)
+
+    with s3:
+        st.markdown("""
+<div class="feature">
+    <div class="feature-icon">🪪</div>
+    <div class="feature-title">Student Documents</div>
+    <div class="feature-text">
+        Get information about IDs, documents and student facilities.
+    </div>
+</div>
+""", unsafe_allow_html=True)
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    st.markdown("""
+<div class="ai-box">
+    <div class="ai-title">🧑‍IPU Ask about Student Services</div>
+    <div class="ai-text">
+        Ask a question and the Student Services Agent will search
+        the available IPU university information.
+    </div>
+</div>
+""", unsafe_allow_html=True)
+
+    query = st.text_input(
+        "Your student services question",
+        placeholder="e.g. How can I get a student certificate?",
+        key="student_services_query"
+    )
+
+    st.markdown(
+        '<div class="section-subtitle">Example questions</div>',
+        unsafe_allow_html=True
+    )
+
+    q1, q2, q3 = st.columns(3)
+
+    with q1:
+        if st.button(
+            "Certificate",
+            use_container_width=True,
+            key="student_example_1"
+        ):
+            st.session_state.student_services_query = (
+                "How can I get a student certificate?"
+            )
+            st.rerun()
+
+    with q2:
+        if st.button(
+            "Scholarship",
+            use_container_width=True,
+            key="student_example_2"
+        ):
+            st.session_state.student_services_query = (
+                "What scholarship information is available for students?"
+            )
+            st.rerun()
+
+    with q3:
+        if st.button(
+            "Student ID",
+            use_container_width=True,
+            key="student_example_3"
+        ):
+            st.session_state.student_services_query = (
+                "How can I get a student ID card?"
+            )
+            st.rerun()
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    if st.button(
+        "Search Search Student Services",
+        type="primary",
+        use_container_width=True,
+        key="search_student_services"
+    ):
+        if query.strip():
+
+            with st.spinner("Searching university information..."):
+                result = student_services_agent(query)
+
+            st.markdown("""
+<div class="ai-box">
+    <div class="ai-title">Info Student Services Answer</div>
+</div>
+""", unsafe_allow_html=True)
+
+            st.write(result)
+
+        else:
+            st.warning("Please enter a student services question first.")
+
+# =========================
+# AI ASSISTANT
+# =========================
+
+elif st.session_state.page == "AI Assistant":
+
+    st.markdown("""
+    <div class="page-banner">
+        <div class="page-small">IPU AI</div>
+        <div class="page-title">AI University Assistant</div>
+        <div class="page-text">
+            Ask any question about IPU and let the multi-agent
+            system find the right information.
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    query = st.text_input(
+        "Ask IPU AI",
+        placeholder="ðŸ”Ž What would you like to know about IPU?"
+    )
+
+    if st.button("Ask IPU AI", type="primary"):
+        if query.strip():
+            with st.spinner("IPU AI is thinking..."):
+                result = supervisor_agent(query)
+
+            st.markdown("### Answer")
+            st.write(result)
+
+
+# =========================
+# FOOTER
+# =========================
+
+st.markdown("""
+<div class="footer">
+    ðŸŽ“ <b>IPU AI</b><br><br>
+    Admission & Student Information Assistant<br><br>
+    Admissions â€¢ Academics â€¢ Notices â€¢ Student Services<br><br>
+    AI Powered University Information System
+</div>
+""", unsafe_allow_html=True)
+
+
+
+
+
+
+
+
+
+
+
+
+
